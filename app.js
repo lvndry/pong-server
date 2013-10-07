@@ -9,7 +9,7 @@ app.get('/', function(req, res){
   res.json({ games: games, clients: clients });
 });
 
-server.listen(8080);
+server.listen(80);
 
 var clients = {}, games = [], sockets = [];
 

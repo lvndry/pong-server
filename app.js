@@ -4,6 +4,7 @@ var
 	server = require('http').createServer(app);
 	
 
+//listen to index page
 app.get('/', function(req, res){
   res.json({ games: games, clients: clients });
 });
@@ -12,13 +13,10 @@ server.listen(8080);
 
 var clients = {}, games = [], sockets = [];
 
+//sockets section
 var WebSocketServer = require('ws').Server
   , wss = new WebSocketServer({server: server});
-wss.on('connection', function(ws) {	
-  //setTimeout(function(){
-  //  ws.send( s({ type: 'position', msg: '8.3|8.121' , id: '2' }) );
-  //},1000);
-
+wss.on('connection', function(ws) {	  
   ws.on('message', function(d) {    		
       console.log('received: %s', d);
       d = JSON.parse(d);      
@@ -38,11 +36,7 @@ wss.on('connection', function(ws) {
 
 function setPosition(d){
   c = clients[clients[d.id].enemyId];
-  if (c)
-    sockets[c.id].send( s({ type: 'position', msg: d.msg , id: d.id }) );
-    //sockets.forEach(function(so){
-    //  so.send( s({ type: 'position', msg: d.msg , id: d.id }) );
-    //});
+  if (c) sockets[c.id].send( s({ type: 'position', msg: d.msg , id: d.id }) );
 }
 
 function connectRequest(d, socket){  
@@ -73,12 +67,7 @@ function connectRequest(d, socket){
 }
 
 function disconnectUser(s){
-  console.log('disconnected for client' + s.clientId);
-  //remove client  
-  //Object.keys(clients).forEach(function(key){
-  //  if (clients[key].socket == s) {clientIdToRemove = key; console.log('found key to remove:' + key); }
-  //});
-  //remove from game 
+  console.log('disconnected for client' + s.clientId);  
   games.forEach(function(g){
     if (g.players[0] == s.clientId || g.players[1] == s.clientId){
       g.players.splice(g.players.indexOf(s.clientId)); //remove client from game

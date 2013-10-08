@@ -35,12 +35,14 @@ wss.on('connection', function(ws) {
 });
 
 function setPosition(d){
-  c = clients[clients[d.id].enemyId];
-  if (c) sockets[c.id].send( s({ type: 'position', msg: d.msg , id: d.id }) );
+  if (d.id){
+    c = clients[clients[d.id].enemyId];
+    if (c) sockets[c.id].send( s({ type: 'position', msg: d.msg , id: d.id }) );
+  }
 }
 
 function connectRequest(d, socket){  
-  var newPlayer = {id: Object.keys(clients).length + 1, score: 0, status: 'connect'}
+  var newPlayer = {id: guid(), score: 0, status: 'connect'} //Object.keys(clients).length + 1
   socket.clientId = newPlayer.id;
   sockets[newPlayer.id] = socket;
 
@@ -61,22 +63,37 @@ function connectRequest(d, socket){
     }
   });
   if (!foundMatch){ //create new game
-    game = {players: [newPlayer.id], id: games.length + 1};
+    game = {players: [newPlayer.id], id: guid()}; //games.length + 1
     games.push(game);
   }
 }
 
-function disconnectUser(s){
-  console.log('disconnected for client' + s.clientId);  
+function disconnectUser(socket){
+  console.log('disconnected for client: ' + socket.clientId);  
   games.forEach(function(g){
-    if (g.players[0] == s.clientId || g.players[1] == s.clientId){
-      g.players.splice(g.players.indexOf(s.clientId)); //remove client from game
+    if (g.players[0] == socket.clientId || g.players[1] == socket.clientId){      
+      //notify enemy left the game
+      sockets[ ((g.players[0] == socket.clientId) ?  g.players[1] : g.players[0]) ].send( s({ type: 'enemyLeft', msg: socket.clientId }) );
+
+      g.players.splice(g.players.indexOf(socket.clientId)); //remove client from game
       if (g.players.length == 0) games.splice(g); //remove game from games
     }
   });
-  delete clients[s.clientId];
-  delete sockets[s.clientId];
+  delete clients[socket.clientId];
+  delete sockets[socket.clientId];
 }
 
 //helpers
 function s(j){return JSON.stringify(j); }
+
+  //guid
+function s4() {
+  return Math.floor((1 + Math.random()) * 0x10000)
+             .toString(16)
+             .substring(1);
+};
+
+function guid() {
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+         s4() + '-' + s4() + s4() + s4();
+}
